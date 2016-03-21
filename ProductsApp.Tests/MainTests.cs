@@ -10,7 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using NUnit.Framework;
+using ProductsApp.Models;
 
 namespace ProductsApp.Tests
 {
@@ -100,6 +102,33 @@ namespace ProductsApp.Tests
             Assert.AreEqual("1", productId);
             Assert.AreEqual("Tomato Soup", productName);
             Assert.AreEqual("1", productPrice);
+        }
+
+        [Test]
+        public async Task GetProduct_returns_product2()
+        {
+            //get the service url
+            var serviceUrlString = ConfigurationManager.AppSettings["ServiceUrl"];
+            var serviceUri = new Uri(serviceUrlString);
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
+            var response = await client.GetAsync(serviceUri + "api/products/1");
+
+            // gets the content of http responce and converts it to a string
+            var result = response.Content.ReadAsStringAsync().Result;
+
+            //deserialize xml into Product type in order to access the Product properties
+            var serializer = new XmlSerializer(typeof(Product));
+
+            //allows reading from the response string (result)
+            var reader = new StringReader(result);
+            var product = (Product)serializer.Deserialize(new NamespaceIgnorantXmlTextReader(reader));
+
+            //check the data of the first product
+            Assert.AreEqual("Groceries", product.Category);
+            Assert.AreEqual(1, product.Id);
+            Assert.AreEqual("Tomato Soup", product.Name);
+            Assert.AreEqual(1, product.Price);
         }
 
         [Test]
